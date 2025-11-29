@@ -31,33 +31,27 @@ AND isofficial = TRUE;
 SELECT c.name, c.code
 FROM countries c
 WHERE c.region = (
-	SELECT region FROM countries
-	WHERE region = 'Southern Europe'
-	ORDER BY population ASC
-	LIMIT 1
-)
-AND c.code <> (
-	SELECT code FROM countries
-	WHERE region = 'Southern Europe'
-	ORDER BY population ASC
-	LIMIT 1
+    SELECT region FROM countries
+    WHERE region = 'Southern Europe'
+    ORDER BY population ASC
+    LIMIT 1
 )
 AND c.code IN (
-	SELECT countrycode
-	FROM countrylanguages
-	GROUP BY countrycode
-	HAVING COUNT(*) = 1
-		AND MAX(language) = (
-			SELECT language FROM countrylanguages
-			WHERE countrycode = (
-				SELECT code FROM countries
-				WHERE region = 'Southern Europe'
-				ORDER BY population ASC
-				LIMIT 1
-			)
-			AND isofficial = TRUE
-			LIMIT 1
-		)
+    SELECT countrycode
+    FROM countrylanguages
+    GROUP BY countrycode
+    HAVING COUNT(*) = 1
+    AND MAX(language) = (
+        SELECT language FROM countrylanguages
+        WHERE countrycode = (
+            SELECT code FROM countries
+            WHERE region = 'Southern Europe'
+            ORDER BY population ASC
+            LIMIT 1
+        )
+        AND isofficial = TRUE
+        LIMIT 1
+    )
 );
 
 -- Clue #4: We're booking the first flight out – maybe we've actually got a chance to catch her this time. There are only two cities she could be flying to in the country. One is named the same as the country – that would be too obvious. We're following our gut on this one; find out what other city in that country she might be flying to.
@@ -66,6 +60,7 @@ AND c.code IN (
 SELECT name
 FROM cities
 WHERE countrycode = (
+    -- Get the country code from Clue #3
     SELECT c.code
     FROM countries c
     WHERE c.region = (
@@ -83,22 +78,9 @@ WHERE countrycode = (
     AND c.code IN (
         SELECT countrycode
         FROM countrylanguages
-        WHERE language = (
-            SELECT language FROM countrylanguages
-            WHERE countrycode = (
-                SELECT code FROM countries
-                WHERE region = 'Southern Europe'
-                ORDER BY population ASC
-                LIMIT 1
-            )
-            AND isofficial = TRUE
-            LIMIT 1
-        )
-    )
-    AND c.code NOT IN (
-        SELECT countrycode
-        FROM countrylanguages
-        WHERE language != (
+        GROUP BY countrycode
+        HAVING COUNT(*) = 1
+        AND MAX(language) = (
             SELECT language FROM countrylanguages
             WHERE countrycode = (
                 SELECT code FROM countries
@@ -123,31 +105,12 @@ AND name != (
             ORDER BY population ASC
             LIMIT 1
         )
-        AND c.code != (
-            SELECT code FROM countries
-            WHERE region = 'Southern Europe'
-            ORDER BY population ASC
-            LIMIT 1
-        )
         AND c.code IN (
             SELECT countrycode
             FROM countrylanguages
-            WHERE language = (
-                SELECT language FROM countrylanguages
-                WHERE countrycode = (
-                    SELECT code FROM countries
-                    WHERE region = 'Southern Europe'
-                    ORDER BY population ASC
-                    LIMIT 1
-                )
-                AND isofficial = TRUE
-                LIMIT 1
-            )
-        )
-        AND c.code NOT IN (
-            SELECT countrycode
-            FROM countrylanguages
-            WHERE language != (
+            GROUP BY countrycode
+            HAVING COUNT(*) = 1
+            AND MAX(language) = (
                 SELECT language FROM countrylanguages
                 WHERE countrycode = (
                     SELECT code FROM countries
@@ -184,31 +147,12 @@ AND ci.name LIKE (
             ORDER BY population ASC
             LIMIT 1
         )
-        AND c.code != (
-            SELECT code FROM countries
-            WHERE region = 'Southern Europe'
-            ORDER BY population ASC
-            LIMIT 1
-        )
         AND c.code IN (
             SELECT countrycode
             FROM countrylanguages
-            WHERE language = (
-                SELECT language FROM countrylanguages
-                WHERE countrycode = (
-                    SELECT code FROM countries
-                    WHERE region = 'Southern Europe'
-                    ORDER BY population ASC
-                    LIMIT 1
-                )
-                AND isofficial = TRUE
-                LIMIT 1
-            )
-        )
-        AND c.code NOT IN (
-            SELECT countrycode
-            FROM countrylanguages
-            WHERE language != (
+            GROUP BY countrycode
+            HAVING COUNT(*) = 1
+            AND MAX(language) = (
                 SELECT language FROM countrylanguages
                 WHERE countrycode = (
                     SELECT code FROM countries
@@ -233,11 +177,11 @@ AND ci.name LIKE (
                 ORDER BY population ASC
                 LIMIT 1
             )
-            AND c.code != (
-                SELECT code FROM countries
-                WHERE region = 'Southern Europe'
-                ORDER BY population ASC
-                LIMIT 1
+            AND c.code IN (
+                SELECT countrycode
+                FROM countrylanguages
+                GROUP BY countrycode
+                HAVING COUNT(*) = 1
             )
             LIMIT 1
         )
@@ -248,14 +192,9 @@ AND ci.name != (
     SELECT name
     FROM cities
     WHERE countrycode = (
-        SELECT c.code
-        FROM countries c
-        WHERE c.region = (
-            SELECT region FROM countries
-            WHERE region = 'Southern Europe'
-            ORDER BY population ASC
-            LIMIT 1
-        )
+        SELECT code FROM countries
+        WHERE region = 'Southern Europe'
+        ORDER BY population ASC
         LIMIT 1
     )
     LIMIT 1
