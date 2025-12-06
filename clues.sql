@@ -10,228 +10,93 @@ LIMIT 1;
 -- Clue #2: Now that we're here, we have insight that Carmen was seen attending language classes in this country's officially recognized language. Check our databases and find out what language is spoken in this country, so we can call in a translator to work with you.
 
 -- Write SQL query here
-
--- Find the official language(s) of the least-populated country in Southern Europe
 SELECT language
 FROM countrylanguages
-WHERE countrycode = (
-	SELECT code FROM countries
+WHERE countryCode = (
+	SELECT code
+	FROM countries
 	WHERE region = 'Southern Europe'
 	ORDER BY population ASC
 	LIMIT 1
-)
-AND isofficial = TRUE;
-
+);
 
 -- Clue #3: We have new news on the classes Carmen attended – our gumshoes tell us she's moved on to a different country, a country where people speak only the language she was learning. Find out which nearby country speaks nothing but that language.
 
 -- Write SQL query here
-
--- Find a nearby country (same region) whose only language matches the language from Clue #2
-SELECT c.name, c.code
-FROM countries c
-WHERE c.region = (
-    SELECT region FROM countries
-    WHERE region = 'Southern Europe'
-    ORDER BY population ASC
-    LIMIT 1
-)
-AND c.code IN (
-    SELECT countrycode
-    FROM countrylanguages
-    GROUP BY countrycode
-    HAVING COUNT(*) = 1
-    AND MAX(language) = (
-        SELECT language FROM countrylanguages
-        WHERE countrycode = (
-            SELECT code FROM countries
+SELECT 
+    c.name 
+FROM 
+    countries c, 
+    countrylanguages cl 
+WHERE 
+    c.code = cl.countryCode 
+    AND cl.language = (
+        SELECT language
+        FROM countrylanguages
+        WHERE countryCode = (
+            SELECT code
+            FROM countries
             WHERE region = 'Southern Europe'
             ORDER BY population ASC
             LIMIT 1
         )
-        AND isofficial = TRUE
-        LIMIT 1
-    )
-);
+    ) 
+    AND c.region = 'Southern Europe';
 
 -- Clue #4: We're booking the first flight out – maybe we've actually got a chance to catch her this time. There are only two cities she could be flying to in the country. One is named the same as the country – that would be too obvious. We're following our gut on this one; find out what other city in that country she might be flying to.
 
 -- Write SQL query here
-SELECT name
-FROM cities
-WHERE countrycode = (
-    -- Get the country code from Clue #3
-    SELECT c.code
-    FROM countries c
-    WHERE c.region = (
-        SELECT region FROM countries
+SELECT 
+    c.name 
+FROM 
+    cities c
+JOIN 
+    countries co ON c.countryCode = co.code
+WHERE 
+    co.code = (
+        SELECT code
+        FROM countries
         WHERE region = 'Southern Europe'
         ORDER BY population ASC
         LIMIT 1
     )
-    AND c.code != (
-        SELECT code FROM countries
-        WHERE region = 'Southern Europe'
-        ORDER BY population ASC
-        LIMIT 1
-    )
-    AND c.code IN (
-        SELECT countrycode
-        FROM countrylanguages
-        GROUP BY countrycode
-        HAVING COUNT(*) = 1
-        AND MAX(language) = (
-            SELECT language FROM countrylanguages
-            WHERE countrycode = (
-                SELECT code FROM countries
-                WHERE region = 'Southern Europe'
-                ORDER BY population ASC
-                LIMIT 1
-            )
-            AND isofficial = TRUE
-            LIMIT 1
-        )
-    )
-    LIMIT 1
-)
-AND name != (
-    SELECT name FROM countries
-    WHERE code = (
-        SELECT c.code
-        FROM countries c
-        WHERE c.region = (
-            SELECT region FROM countries
-            WHERE region = 'Southern Europe'
-            ORDER BY population ASC
-            LIMIT 1
-        )
-        AND c.code IN (
-            SELECT countrycode
-            FROM countrylanguages
-            GROUP BY countrycode
-            HAVING COUNT(*) = 1
-            AND MAX(language) = (
-                SELECT language FROM countrylanguages
-                WHERE countrycode = (
-                    SELECT code FROM countries
-                    WHERE region = 'Southern Europe'
-                    ORDER BY population ASC
-                    LIMIT 1
-                )
-                AND isofficial = TRUE
-                LIMIT 1
-            )
-        )
-        LIMIT 1
-    )
-);
-
-
+    AND c.name != co.name;
 -- Clue #5: Oh no, she pulled a switch – there are two cities with very similar names, but in totally different parts of the globe! She's headed to South America as we speak; go find a city whose name is like the one we were headed to, but doesn't end the same. Find out the city, and do another search for what country it's in. Hurry!
 
 -- Write SQL query here
 
-SELECT ci.name, co.name AS country, co.code
-FROM cities ci
-JOIN countries co ON ci.countrycode = co.code
-WHERE co.continent = 'South America'
-AND ci.name LIKE (
-    SELECT SUBSTRING(name FROM 1 FOR 5) || '%'
-    FROM cities
-    WHERE countrycode = (
-        SELECT c.code
-        FROM countries c
-        WHERE c.region = (
-            SELECT region FROM countries
-            WHERE region = 'Southern Europe'
-            ORDER BY population ASC
-            LIMIT 1
-        )
-        AND c.code IN (
-            SELECT countrycode
-            FROM countrylanguages
-            GROUP BY countrycode
-            HAVING COUNT(*) = 1
-            AND MAX(language) = (
-                SELECT language FROM countrylanguages
-                WHERE countrycode = (
-                    SELECT code FROM countries
-                    WHERE region = 'Southern Europe'
-                    ORDER BY population ASC
-                    LIMIT 1
-                )
-                AND isofficial = TRUE
-                LIMIT 1
-            )
-        )
-        LIMIT 1
-    )
-    AND name != (
-        SELECT name FROM countries
-        WHERE code = (
-            SELECT c.code
-            FROM countries c
-            WHERE c.region = (
-                SELECT region FROM countries
-                WHERE region = 'Southern Europe'
-                ORDER BY population ASC
-                LIMIT 1
-            )
-            AND c.code IN (
-                SELECT countrycode
-                FROM countrylanguages
-                GROUP BY countrycode
-                HAVING COUNT(*) = 1
-            )
-            LIMIT 1
-        )
-    )
-    LIMIT 1
-)
-AND ci.name != (
-    SELECT name
-    FROM cities
-    WHERE countrycode = (
-        SELECT code FROM countries
-        WHERE region = 'Southern Europe'
-        ORDER BY population ASC
-        LIMIT 1
-    )
-    LIMIT 1
-);
-
+SELECT 
+    c.name AS city_name,
+    co.name AS country_name
+FROM 
+    cities c
+JOIN 
+    countries co ON c.countryCode = co.code
+WHERE 
+    co.continent = 'South America'
+    AND c.name LIKE 'Serr%';
 
 -- Clue #6: We're close! Our South American agent says she just got a taxi at the airport, and is headed towards
 -- the capital! Look up the country's capital, and get there pronto! Send us the name of where you're headed and we'll
 -- follow right behind you!
 
 -- Write SQL query here
-
-SELECT name
-FROM cities
-WHERE id = (
-    SELECT capital
-    FROM countries
-    WHERE code = (
-        SELECT co.code
-        FROM cities ci
-        JOIN countries co ON ci.countrycode = co.code
+SELECT 
+    ci.name AS capital_name,
+    co.name AS country_name
+FROM 
+    cities ci
+JOIN 
+    countries co ON ci.id = co.capital
+WHERE 
+    co.code = (
+        SELECT c.countryCode
+        FROM cities c
+        JOIN countries co ON c.countryCode = co.code
         WHERE co.continent = 'South America'
-        AND ci.name LIKE (
-            SELECT SUBSTRING(name FROM 1 FOR 5) || '%'
-            FROM cities
-            WHERE countrycode = (
-                SELECT c.code
-                FROM countries c
-                WHERE c.region = 'Southern Europe'
-                ORDER BY population ASC
-                LIMIT 1
-            )
-            LIMIT 1
-        )
+        AND c.name LIKE 'Serr%'
         LIMIT 1
-    )
-);
+    );
 
 -- Clue #7: She knows we're on to her – her taxi dropped her off at the international airport, and she beat us to the boarding gates. We have one chance to catch her, we just have to know where she's heading and beat her to the landing dock. Lucky for us, she's getting cocky. She left us a note (below), and I'm sure she thinks she's very clever, but if we can crack it, we can finally put her where she belongs – behind bars.
 
@@ -245,7 +110,11 @@ WHERE id = (
 
 
 -- We're counting on you, gumshoe. Find out where she's headed, send us the info, and we'll be sure to meet her at the gates with bells on.
-
-SELECT name, countrycode, population
-FROM cities
-WHERE population = 91084;
+SELECT 
+    name AS city_name,
+    population,
+    countryCode
+FROM 
+    cities
+WHERE 
+    population = 91084;
